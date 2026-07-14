@@ -1,36 +1,47 @@
-name: Build
+name: Build EX-word Add-on
 
 on:
   push:
-    branches: '*'
+    branches:
+      - '**'
   workflow_dispatch:
-    inputs:
-      tag:
-        type: string
-        description: 'Tag Name to be created'
 
 jobs:
   build:
-    name: Build EX-word addon
+    name: Build for Casio EX-word
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
 
-      - name: Build
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download devkitSH4 toolchain
         run: |
           cd ..
           curl -sSfL https://github.com/MaxSignal/buildscripts/releases/download/Linux/devkitPro.tar.gz | tar -zxf -
-          cd -
-          DEVKITPRO="$OLDPWD/devkitPro" DEVKITSH4="$DEVKITPRO/devkitSH4" PATH="$DEVKITPRO/tools/bin:$DEVKITSH4/bin:$PATH" make
-          zip -r build.zip build
+          echo "Toolchain extracted successfully"
+          ls devkitPro/
 
-      - name: Upload Artifact
+      - name: Build app
+        run: |
+          export DEVKITPRO="$GITHUB_WORKSPACE/../devkitPro"
+          export DEVKITSH4="$DEVKITPRO/devkitSH4"
+          export PATH="$DEVKITPRO/tools/bin:$DEVKITSH4/bin:$PATH"
+          make
+          echo "Build output:"
+          ls -la build/
+
+      - name: Package build output
+        run: |
+          zip -r build.zip build/
+          echo "Package contents:"
+          unzip -l build.zip
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
+          name: exword-hello-addon
           path: build.zip
+          retention-days: 30
