@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    tags: '*'
+    branches: '*'
   workflow_dispatch:
     inputs:
       tag:
@@ -29,10 +29,8 @@ jobs:
           DEVKITPRO="$OLDPWD/devkitPro" DEVKITSH4="$DEVKITPRO/devkitSH4" PATH="$DEVKITPRO/tools/bin:$DEVKITSH4/bin:$PATH" make
           zip -r build.zip build
 
-      - name: Publish
-        run: |
-          if [ -n "${{ inputs.tag }}" ]; then
-            gh release create "${{ inputs.tag }}" -t "${{ inputs.tag }}" -n "Automatic build of $(git rev-parse HEAD)." ./build.zip
-          else
-            gh release create "${GITHUB_REF/refs\/*s\//}" -t "${GITHUB_REF/refs\/*s\//}" -n "Automatic build of $(git rev-parse HEAD)." ./build.zip
-          fi
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build.zip
